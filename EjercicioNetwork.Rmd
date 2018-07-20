@@ -1,0 +1,42 @@
+---
+title: "Armar funciones nosotros"
+author: "JK"
+date: "July 19, 2018"
+output: html_document
+---
+
+```{r }
+require(igraph)
+require(NetIndices)
+require(RColorBrewer)
+
+source("R/functions.r")
+
+web <- read.csv("Data/WeddellSea_FW.csv", header = T, check.names = F)
+str(web)
+
+# Armar funciones
+g <- readEcoNetwork("Data/WeddellSea_FW.csv")
+
+plotEcoNetworkTrophLevel(g)
+
+tien <- topologicalIndicesEcoNetwork(g)
+
+# rbind agregar filas
+tien <- rbind(tien, topologicalIndicesEcoNetwork(g))
+
+```
+
+
+
+```{r }
+
+```
+
+
+
+```{r }
+
+```
+
+

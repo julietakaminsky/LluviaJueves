@@ -12,14 +12,170 @@ output: html_document
 require(igraph)
 
 
+web <- read.csv("Data/WeddellSea_FW.csv", header = T, check.names = F)
+str(web)
+
+web <- web[,c(2,1)]
+
+g <- graph_from_data_frame(web)
+
+g
+
+plot(g)
+
+# IGRAPH 
+# 9dd24ad (nombre)
+# D (dirigido o no) N (si los nodos tienen nombres) - (si tienen peso) - (tipo)
+# 442 (número de nodos)
+# 1915 (número de interacciones) --
+
+# Podés pedirle distinta información
+
+E(g) # número de edges
+V(g) 
+V(g)$name
+V(g)[name=="Detritus"]
+V(g)[1]
+g[1, ] # columna 1
+g[ ,1]
+
+deg.all <- degree(g, mode = "all")
+deg.in <- degree(g, mode = "in")
+deg.out <- degree(g, mode = "out")
+
+deg.out <- degree(g, "Detritus", mode = "out")
+
+deg.all
+
+
+# Plot
+plot(g, edge.arrow.size=.4,vertex.label=NA) # Smaller arrow size, not plot names
+
+plot(g, edge.arrow.size=.4,vertex.label=NA,vertex.size=8, edge.color= "brown",layout=layout_with_fr) # Smaller vertex size, specifying a layout 
+
+deg <- degree(g, mode = "all")
+V(g)$size <- log10(deg)*5+5    # add node degrees to igraph object
+
+V(g)$frame.color <- "white"    # Specify plot options directly on the object 
+V(g)$color <- "orange"         #
+
+plot(g, edge.arrow.size=.4,vertex.label=NA,layout=layout_with_lgl)
+
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r }
+# Instalar paquete NetIndices
+install.packages("NetIndices")
+
+require(NetIndices)
+
+## Calcular trophic level. Los que solo tienen predadores, son Nivel 1. Los otros se calculan sumándole 1 del nivel trófico de las presas.
+tl <- TrophInd(get.adjacency(g, sparse=F)) #Trophic level and herbivory
+tl
+
+# Podés agregar un paso antes
+# matAdj <- get.adjacency(g, sparse=F)
+# tl <- TrophInd(matAdj)
+
+tl[tl$TL>=2,]
+
+# Plot with trophic levels
+
+lMat <-matrix(
+  nrow=vcount(g),  # Rows equal to the number of vertices (species)
+  ncol=2
+)
+
+lMat[,2]<-jitter(tl$TL,0.1)              # y-axis value based on trophic level
+lMat[,1]<-runif(vcount(g))   # randomly assign along x-axis
+
+plot(g, edge.width=.3,edge.arrow.size=.4,
+       vertex.label=NA,
+       edge.color="grey50",
+       edge.curved=0.3, layout=lMat)
+
+
+# Para agregar paletta de colores
+install.packages("RColorBrewer")
+require(RColorBrewer)
+
+colTL <-as.numeric(cut(tl$TL,11))   # Divide trophic levels in 11 segments
+colnet <- brewer.pal(11,"RdYlGn")   # Assign colors to trophic levels
+V(g)$color <- colnet[12-colTL]      # Add colors to the igraph object
+
+
+plot(g, edge.width=.3,edge.arrow.size=.4,
+       vertex.label=NA,
+       edge.color="grey50",
+       edge.curved=0.3, layout=lMat)
+
+# Read a network in adjacency matrix forma
+
+web <- read.csv("Data/BarentsBoreal_FW.csv",  header = T,check.names = F)
+
+if ((ncol(web)-1) ==nrow(web) ) {
+  
+  g <- graph_from_adjacency_matrix(as.matrix(web[,2:ncol(web)])) # The adjacency matrix must be square
+  
+  } else {
+  
+      warning("El número de filas no es igual al número de columnas en la matrix de adyacencia")
+    
+} 
+            
+
+# Read a network in adjacency matrix forma
+
+web <- read.csv("Data/BarentsBoreal_FW.csv",  header = T,check.names = F)
+
+if ( (ncol(web)-1) == nrow(web) ) {         # The adjacency matrix must be square    
+    tmp0 <- ncol(web)
+    tmp <- web[,2:tmp0]
+    tmp1  <-  as.matrix(tmp)
+    g <- graph_from_adjacency_matrix(tmp1)
+    
+} else {
+    warning("El numero de filas no es igual al numero de columnas en la matrix de adyacencia")
+}
+
+g
+
+# Calculate other network indices
+
+deg <- degree(g, mode="out") # calculate the in-degree: the number of predators  
+V(g)$outdegree <-  deg # se lo agrega como variable 
+
+nTop <- length(V(g)[outdegree==0]) # Top predators do not have predators
+
+deg <- degree(g, mode="in") # calculate the in-degree: the number of preys
+
+V(g)$indegree <-  deg
+
+nBasal <- length(V(g)[indegree==0]) # Basal species do not have preys 
+
+vcount(g)-nTop-nBasal # Intermediate species
+
+size <- vcount(g) # número de vértices
+
+links <- ecount(g) # número de interacciones
+
+linkDen <- links/size          # Linkage density, densidad de interacciones promedio por especie
+
+conn <- links/size^2           # Connectance, número de interacciones realizadas vs el número de posibles
+
+pathLength <- average.path.length(g)   # Average path length 
+
+clusCoef <- transitivity(g, type = "global")   # Clustering coefficient
+
+
+
+# Armar funciones
+
+require
+
+
+
 ```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
